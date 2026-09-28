@@ -1,0 +1,137 @@
+# Train with both natural-image datasets, pretrained CLIP, and the large U-Net.
+# `--dataset all` means Flickr8k + Flickr30k; it excludes FashionMNIST.
+# The automatic experiment name will be all-preclip-large-lr2e-4.
+LARGE_UNET_JOB_ID=$(sbatch --parsable \
+  submit-dalle2-train.sh \
+  --dataset all \
+  --using-pre-CLIP \
+  --large-UNet \
+  --decoder-lr 2e-4)
+
+# Run these separately to monitor the submitted training job:
+# squeue -j "${LARGE_UNET_JOB_ID}"
+# tail -f "result_out/dalle2-train-${LARGE_UNET_JOB_ID}.out"
+# sstat -j "${LARGE_UNET_JOB_ID}.batch" \
+#   --format=JobID,Elapsed,MaxRSS,AveCPU
+
+# Start inference only if training succeeds. Training and inference must use
+# only the saved run name; infer.py reloads its exact configuration.
+sbatch --dependency="afterok:${LARGE_UNET_JOB_ID}" \
+  submit-dalle2-infer.sh \
+  --run-name all-preclip-large-lr2e-4 \
+  --prior-candidates 8 \
+  --prompt "two children are playing outside" \
+  --num-images 4 \
+  --output generated_images/two-children-playing-large-unet.png
+
+
+
+sbatch submit-dalle2-infer.sh \
+  --run-name all-preclip-large-lr1e-4 \
+  --prompt "an astronaut standing on an egg" \
+  --num-images 4 \
+  --output generated_images/large_UNet_1e-4_astronaut-standing-egg.png
+
+sbatch submit-dalle2-infer.sh \
+  --run-name all-preclip-large-lr1e-4 \
+  --prompt "a dog running through green grass" \
+  --num-images 4 \
+  --output generated_images/large_UNet_1e-4_dog_running.png
+
+sbatch submit-dalle2-infer.sh \
+  --run-name all-preclip-large-lr1e-4 \
+  --prompt "a man riding a bicycle" \
+  --num-images 4 \
+  --output generated_images/large_UNet_1e-4_man_riding.png
+
+sbatch submit-dalle2-infer.sh \
+  --run-name all-preclip-large-lr1e-4 \
+  --prompt "two children playing outside" \
+  --num-images 4 \
+  --output generated_images/large_UNet_1e-4_children_playing.png
+
+
+------
+
+
+  TRAIN_JOB_ID_2=$(sbatch --parsable \
+    submit-dalle2-train.sh \
+    --dataset all \
+    --using-pre-CLIP \
+    --large-UNet \
+    --prior-epochs 50 \
+    --decoder-epochs 100 \
+    --decoder-lr 1e-4 \
+    --run-name all-preclip-large-prior50-decoder100-lr1e-4)
+
+  sbatch --dependency="afterok:${TRAIN_JOB_ID_2}" \
+  submit-dalle2-infer.sh \
+  --run-name all-preclip-large-prior50-decoder100-lr1e-4 \
+  --prior-candidates 8 \
+  --prompt "two children are playing outside" \
+  --num-images 4 \
+  --output generated_images/two-children-playing-large-unet-prior50-decoder100-lr1e-4.png
+
+
+# Additional examples after the all-dataset large-U-Net model is trained.
+sbatch submit-dalle2-infer.sh \
+   --run-name all-preclip-large-prior50-decoder100-lr1e-4 \
+  --prompt "an astronaut standing on an egg" \
+  --num-images 4 \
+  --output generated_images/astronaut-standing-egg-large-unet-prior50-decoder100-lr1e-4.png
+
+sbatch submit-dalle2-infer.sh \
+   --run-name all-preclip-large-prior50-decoder100-lr1e-4 \
+  --prompt "a dog running through green grass" \
+  --num-images 4 \
+  --output generated_images/dog_running-large-unet-prior50-decoder100-lr1e-4.png
+
+sbatch submit-dalle2-infer.sh \
+   --run-name all-preclip-large-prior50-decoder100-lr1e-4 \
+  --prompt "a man riding a bicycle" \
+  --num-images 4 \
+  --output generated_images/man_riding-large-unet-prior50-decoder100-lr1e-4.png
+
+sbatch submit-dalle2-infer.sh \
+   --run-name all-preclip-large-prior50-decoder100-lr1e-4 \
+  --prompt "two children playing outside" \
+  --num-images 4 \
+  --output generated_images/children_playing-large-unet-prior50-decoder100-lr1e-4.png
+
+
+sbatch submit-dalle2-infer.sh \
+   --run-name all-preclip-large-prior50-decoder100-lr1e-4 \
+  --prompt "A black dog is running after a white dog in the snow ." \
+  --num-images 4 \
+  --output generated_images/black-white-dog-large-unet-prior50-decoder100-lr1e-4.png
+
+sbatch submit-dalle2-infer.sh \
+   --run-name all-preclip-large-prior50-decoder100-lr1e-4 \
+  --prompt "A group of people hold drinks and point at the camera ." \
+  --num-images 4 \
+  --output generated_images/a-group-people-large-unet-prior50-decoder100-lr1e-4.png
+
+
+
+# FashionMNIST-only example. `--dataset fashion_mnist` is equivalent.
+FASHION_JOB_ID=$(sbatch --parsable \
+  submit-dalle2-train.sh \
+  --data fashionMNIST)
+
+sbatch --dependency="afterok:${FASHION_JOB_ID}" \
+  submit-dalle2-infer.sh \
+  --data fashionMNIST \
+  --prompt "An image of a sneaker" \
+  --num-images 4 \
+  --output generated_images/fashion-mnist-sneaker.png
+
+
+
+# Dataset behavior:
+#   no dataset option     -> Flickr30k only
+#   --dataset all         -> Flickr8k + Flickr30k only
+#   --dataset flickr8k    -> Flickr8k only
+#   --data fashionMNIST   -> FashionMNIST only
+#
+# Existing checkpoints are protected. Add --resume to the training command to
+# skip complete stages, or --overwrite to explicitly replace them.

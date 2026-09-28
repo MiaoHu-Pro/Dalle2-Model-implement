@@ -1,0 +1,11 @@
+*__pycache__/
+
+result_out/*.out
+generated_images/*.png
+
+*.pt
+
+!*trained_models/*.pt
+/result_out/
+/.ipynb_checkpoints
+/datasets/
