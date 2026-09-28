@@ -53,7 +53,7 @@ are two CLIP modes:
 The pretrained model is expected by default at:
 
 ```text
-~/scratch/llms_model/clip-vit-base-patch32
+~/llms_model/clip-vit-base-patch32
 ```
 
 ### 2. Diffusion prior
@@ -148,7 +148,7 @@ The following command trains on Flickr8k and Flickr30k, uses frozen pretrained
 CLIP, and selects the larger decoder U-Net:
 
 ```bash
-cd ~/scratch/dips_project/reinforcement_learning/multip_modal/dalle2-fixed
+cd ~/dalle2
 
 TRAIN_JOB_ID=$(sbatch --parsable \
   submit-dalle2-train.sh \
